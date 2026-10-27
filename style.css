@@ -45,6 +45,12 @@
     flex-wrap: wrap;
 }
 
+#paper_bg_settings .pb-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 #paper_bg_settings .pb-label {
     font-size: 0.92em;
     opacity: 0.8;
@@ -116,6 +122,8 @@
     line-height: 1.55;
     background: var(--pb-preview-bg, transparent);
     color: var(--pb-preview-ink, inherit);
+    background-size: cover;
+    background-position: center;
 }
 
 #paper_bg_settings .pb-sample em {
@@ -138,12 +146,26 @@
     color: inherit;
 }
 
+#paper_bg_settings button.pb-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 #paper_bg_settings input[type="color"] {
     width: 42px;
     height: 28px;
     padding: 0;
     border: 0;
     background: transparent;
+}
+
+#paper_bg_settings input[type="range"] {
+    flex: 1;
+    min-width: 120px;
+}
+
+#paper_bg_settings [hidden] {
+    display: none !important;
 }
 
 .pb-crop {
