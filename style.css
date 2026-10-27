@@ -383,3 +383,23 @@ html.paper-bg-theme .neo-range-slider::-moz-range-thumb {
     border: 2px solid var(--pb-accent) !important;
 }
 
+html.paper-bg-on .mes_button,
+html.paper-bg-on .extraMesButtons > div,
+html.paper-bg-on .extraMesButtonsHint {
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
+    color: #6A6560 !important;
+}
+
+html.paper-bg-on .mes_button:hover,
+html.paper-bg-on .mes_button:active,
+html.paper-bg-on .extraMesButtons > div:hover,
+html.paper-bg-on .extraMesButtons > div:active,
+html.paper-bg-on .extraMesButtonsHint:hover,
+html.paper-bg-on .extraMesButtonsHint:active {
+    opacity: 1 !important;
+    filter: none !important;
+    color: #282420 !important;
+}
+
