@@ -244,13 +244,21 @@ function fontCss(settings) {
 
 function themeVars(settings) {
     const accent = parseColor(accentOf(settings));
-    const dark = mix(accent, [0, 0, 0], 0.48);
-    const light = mix(accent, [255, 255, 255], 0.42);
-    const edge = mix(accent, [255, 255, 255], 0.72);
+    const paper = parseColor(paperOf(settings)) || parseColor('#F0EAE4');
+    const ink = parseColor(SELECTED_INK);
+    let amount = 0.36;
+    let dark = mix(paper, accent, amount);
+    while (amount > 0.08 && contrast(ink, dark) < 4.5) {
+        amount -= 0.04;
+        dark = mix(paper, accent, amount);
+    }
+    if (luminance(accent) > luminance(dark)) dark = accent.slice();
+    const light = mix(paper, accent, amount * 0.55);
+    const edge = mix(paper, accent, amount * 0.22);
     return {
         accent: rgbHex(accent),
         onAccent: onColor(accent),
-        onBar: onColor(dark),
+        onBar: SELECTED_INK,
         dark: rgbHex(dark),
         light: rgbHex(light),
         edge: rgbHex(edge),

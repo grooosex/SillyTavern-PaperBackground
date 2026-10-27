@@ -319,7 +319,7 @@ html.paper-bg-theme #extensions_settings .inline-drawer-toggle.inline-drawer-hea
 html.paper-bg-theme #extensions_settings2 .inline-drawer-toggle.inline-drawer-header,
 html.paper-bg-theme #user-settings-block h4,
 html.paper-bg-theme .standoutHeader {
-    background-image: linear-gradient(90deg, var(--pb-bar-dark) 0%, var(--pb-accent) 46%, var(--pb-bar-light) 88%, var(--pb-bar-edge) 100%) !important;
+    background-image: linear-gradient(90deg, var(--pb-bar-dark) 0%, var(--pb-bar-light) 58%, var(--pb-bar-edge) 100%) !important;
     color: var(--pb-on-bar) !important;
     border-color: transparent !important;
     filter: none !important;
