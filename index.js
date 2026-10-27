@@ -4,13 +4,46 @@ const BODY_INK = '#1A1814';
 const BODY_PAPER = '#F4F0E8';
 const EM_GRAY = '#5E5953';
 const EM_GRAY_SOFT = '#8A837A';
+const MUTED = '#88847C';
+const SELECTED_INK = '#282420';
+const CHIP = '#E4DED2';
+const FONT_SANS = 'system-ui, -apple-system, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "HarmonyOS Sans", "Microsoft YaHei", sans-serif';
+const FONT_SERIF = '"Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", "PMingLiU", serif';
 
 const PRESETS = [
+    { id: 'huiyu', name: '绘语米', color: '#F0EAE4' },
     { id: 'paper', name: '米纸', color: '#F0E8DD' },
     { id: 'white', name: '暖白', color: '#F7F5F2' },
-    { id: 'green', name: '淡松绿', color: '#E4EFE6' },
-    { id: 'blue', name: '雾蓝', color: '#E4EDF3' },
+    { id: 'oat', name: '燕麦', color: '#EFE6D6' },
+    { id: 'apricot', name: '浅杏', color: '#F4E6D8' },
+    { id: 'bean', name: '豆沙', color: '#F0E4E1' },
+    { id: 'limewash', name: '石灰', color: '#E6E4E0' },
+    { id: 'ash', name: '墨灰', color: '#E2E0DC' },
     { id: 'gray', name: '暖灰', color: '#E6E1D8' },
+    { id: 'green', name: '淡松绿', color: '#E4EFE6' },
+    { id: 'tea', name: '茶绿', color: '#E5EDE4' },
+    { id: 'celadon', name: '青瓷', color: '#E4EEEA' },
+    { id: 'mistteal', name: '雾青', color: '#DCE8E6' },
+    { id: 'blue', name: '雾蓝', color: '#E4EDF3' },
+    { id: 'mountain', name: '远山蓝', color: '#E4EAF0' },
+    { id: 'sea', name: '海蓝', color: '#E3EEF2' },
+    { id: 'graylilac', name: '灰紫', color: '#E9E6EE' },
+];
+
+const ACCENTS = [
+    { id: 'brick', name: '灰砖红', color: '#905448' },
+    { id: 'cinnabar', name: '朱砂', color: '#A24B3E' },
+    { id: 'rose', name: '玫瑰褐', color: '#8C5A64' },
+    { id: 'coffee', name: '暖咖', color: '#6E5344' },
+    { id: 'olive', name: '橄榄', color: '#6A6E45' },
+    { id: 'moss', name: '苔绿', color: '#5C7A52' },
+    { id: 'pine', name: '松绿', color: '#3F6B5A' },
+    { id: 'teal', name: '青绿', color: '#3E6E68' },
+    { id: 'mist', name: '雾蓝', color: '#4E6A84' },
+    { id: 'ocean', name: '海蓝', color: '#3D6078' },
+    { id: 'inkblue', name: '墨蓝', color: '#3E4C62' },
+    { id: 'lilac', name: '藕紫', color: '#7A6488' },
+    { id: 'dusk', name: '暮紫', color: '#5E4E6C' },
 ];
 
 const DEFAULTS = {
@@ -24,6 +57,15 @@ const DEFAULTS = {
     image: '',
     imageLuma: '#F0E8DD',
     wash: 45,
+    theme: false,
+    themePaperSeeded: false,
+    accent: 'brick',
+    accentCustom: '#905448',
+    fontFamily: 'tavern',
+    fontCustom: '',
+    fontSize: 100,
+    fontWeight: 0,
+    fontTouched: false,
 };
 
 let metaSnapshot = null;
@@ -78,9 +120,23 @@ function mix(a, b, t) {
     return [0, 1, 2].map(i => a[i] + (b[i] - a[i]) * t);
 }
 
+function rgbHex(rgb) {
+    return toHex(`rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
+}
+
 function paperOf(settings) {
     if (settings.preset === 'custom') return toHex(settings.customColor, '#F0E8DD');
     return PRESETS.find(item => item.id === settings.preset)?.color || '#F0E8DD';
+}
+
+function accentOf(settings) {
+    if (settings.accent === 'custom') return toHex(settings.accentCustom, '#905448');
+    return ACCENTS.find(item => item.id === settings.accent)?.color || '#905448';
+}
+
+function onColor(rgb) {
+    const white = [255, 255, 255];
+    return contrast(white, rgb) >= 3.15 ? '#FFFFFF' : SELECTED_INK;
 }
 
 function effectiveBg(settings) {
@@ -128,6 +184,9 @@ function settingsOf() {
         if (settings[key] === undefined) settings[key] = value;
     }
     settings.wash = Math.min(80, Math.max(0, Number(settings.wash) || 0));
+    settings.fontSize = Math.min(130, Math.max(85, Number(settings.fontSize) || 100));
+    const weight = Number(settings.fontWeight);
+    settings.fontWeight = [0, 300, 400, 500, 600].includes(weight) ? weight : 0;
     return settings;
 }
 
@@ -139,12 +198,74 @@ function themeColor(key, fallback) {
     return ctx().powerUserSettings?.[key] || fallback;
 }
 
+function fontStack(settings) {
+    if (settings.fontFamily === 'sans') return FONT_SANS;
+    if (settings.fontFamily === 'serif') return FONT_SERIF;
+    if (settings.fontFamily === 'custom') {
+        const name = String(settings.fontCustom || '').replace(/[^\w\u4e00-\u9fff \-.]+/g, '').trim().slice(0, 64);
+        if (!name) return FONT_SANS;
+        return `"${name}", ${FONT_SANS}`;
+    }
+    return '';
+}
+
+function seedTheme(settings) {
+    let changed = false;
+    if (!settings.themePaperSeeded && settings.preset === 'paper') {
+        settings.preset = 'huiyu';
+        changed = true;
+    }
+    if (!settings.themePaperSeeded) {
+        settings.themePaperSeeded = true;
+        changed = true;
+    }
+    if (!settings.fontTouched) {
+        settings.fontFamily = 'sans';
+        settings.fontWeight = 400;
+        settings.fontSize = 100;
+        settings.fontTouched = true;
+        changed = true;
+    }
+    return changed;
+}
+
+function fontCss(settings) {
+    const family = fontStack(settings);
+    const weight = Number(settings.fontWeight) || 0;
+    const size = Math.min(130, Math.max(85, Number(settings.fontSize) || 100));
+    if (!family && !weight && size === 100) return '';
+    let rule = 'html.paper-bg-on .mes_text {';
+    if (family) rule += `font-family:${family} !important;`;
+    if (weight) rule += `font-weight:${weight} !important;`;
+    if (size !== 100) rule += `font-size:calc(var(--mainFontSize) * ${(size / 100).toFixed(3)}) !important;`;
+    rule += '}';
+    return rule;
+}
+
+function themeVars(settings) {
+    const accent = parseColor(accentOf(settings));
+    const dark = mix(accent, [0, 0, 0], 0.48);
+    const light = mix(accent, [255, 255, 255], 0.42);
+    const edge = mix(accent, [255, 255, 255], 0.72);
+    return {
+        accent: rgbHex(accent),
+        onAccent: onColor(accent),
+        onBar: onColor(dark),
+        dark: rgbHex(dark),
+        light: rgbHex(light),
+        edge: rgbHex(edge),
+        r: Math.round(accent[0]),
+        g: Math.round(accent[1]),
+        b: Math.round(accent[2]),
+    };
+}
+
 function buildCss(settings) {
     const paper = paperOf(settings);
     const paperRgb = parseColor(paper);
     const bg = effectiveBg(settings);
     const body = resolveBody(settings, bg);
-    const bodyHex = toHex(`rgb(${body[0]}, ${body[1]}, ${body[2]})`);
+    const bodyHex = rgbHex(body);
     const light = luminance(bg) > 0.62;
     const themeEm = parseColor(themeColor('italics_text_color', ''));
     const themeUnderline = parseColor(themeColor('underline_text_color', ''));
@@ -159,6 +280,7 @@ function buildCss(settings) {
     const shadow = light ? 'rgba(26, 24, 20, 0)' : 'rgba(0, 0, 0, 0.45)';
     const image = settings.image ? `url("${String(settings.image).replace(/["\\\n\r]/g, '')}")` : 'none';
     const quote = settings.quoteCustom ? toHex(settings.quoteColor, '#E18A24') : null;
+    const accent = settings.theme ? themeVars(settings) : null;
 
     let css = `
 html.paper-bg-on {
@@ -189,8 +311,8 @@ html.paper-bg-on #bg1 {
     background-repeat: no-repeat !important;
 }
 `;
-    if (em) css += `html.paper-bg-on { --SmartThemeEmColor: ${toHex(`rgb(${em[0]},${em[1]},${em[2]})`)} !important; }\n`;
-    if (underline) css += `html.paper-bg-on { --SmartThemeUnderlineColor: ${toHex(`rgb(${underline[0]},${underline[1]},${underline[2]})`)} !important; }\n`;
+    if (em) css += `html.paper-bg-on { --SmartThemeEmColor: ${rgbHex(em)} !important; }\n`;
+    if (underline) css += `html.paper-bg-on { --SmartThemeUnderlineColor: ${rgbHex(underline)} !important; }\n`;
     if (quote) css += `html.paper-bg-on { --SmartThemeQuoteColor: ${quote} !important; }\n`;
     if (light) {
         css += `
@@ -212,7 +334,35 @@ html.paper-bg-on #send_textarea::placeholder {
 }
 `;
     }
-    return { css, paper, bodyHex, em, quote, bg };
+    css += fontCss(settings);
+    if (accent) {
+        css += `
+html.paper-bg-theme {
+    --pb-accent: ${accent.accent} !important;
+    --pb-on-accent: ${accent.onAccent} !important;
+    --pb-on-bar: ${accent.onBar} !important;
+    --pb-bar-dark: ${accent.dark} !important;
+    --pb-bar-light: ${accent.light} !important;
+    --pb-bar-edge: ${accent.edge} !important;
+    --pb-muted: ${MUTED} !important;
+    --pb-ink: ${SELECTED_INK} !important;
+    --pb-chip: ${CHIP} !important;
+    --SmartThemeCheckboxBgColorR: ${accent.r} !important;
+    --SmartThemeCheckboxBgColorG: ${accent.g} !important;
+    --SmartThemeCheckboxBgColorB: ${accent.b} !important;
+}
+html.paper-bg-theme textarea,
+html.paper-bg-theme input[type="text"],
+html.paper-bg-theme input[type="search"],
+html.paper-bg-theme input[type="number"],
+html.paper-bg-theme input[type="password"],
+html.paper-bg-theme select {
+    background-color: #FCFCF8 !important;
+    color: ${SELECTED_INK} !important;
+}
+`;
+    }
+    return { css, paper, bodyHex, em, quote, bg, accent };
 }
 
 function applyTheme() {
@@ -220,7 +370,7 @@ function applyTheme() {
     const root = document.documentElement;
     if (!settings.enabled) {
         clearTheme();
-        return buildCss({ ...settings, enabled: true });
+        return buildCss(settings);
     }
     const built = buildCss(settings);
     let style = document.getElementById(STYLE_ID);
@@ -231,6 +381,7 @@ function applyTheme() {
     style.textContent = built.css;
     document.head.appendChild(style);
     root.classList.add('paper-bg-on');
+    root.classList.toggle('paper-bg-theme', !!settings.theme);
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
         if (metaSnapshot === null) metaSnapshot = meta.getAttribute('content');
@@ -241,7 +392,7 @@ function applyTheme() {
 
 function clearTheme() {
     document.getElementById(STYLE_ID)?.remove();
-    document.documentElement.classList.remove('paper-bg-on');
+    document.documentElement.classList.remove('paper-bg-on', 'paper-bg-theme');
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta && metaSnapshot !== null) meta.setAttribute('content', metaSnapshot);
     metaSnapshot = null;
@@ -251,7 +402,7 @@ function previewColors(built, settings) {
     const themeQuote = toHex(themeColor('quote_text_color', '#E18A24'), '#E18A24');
     const quote = settings.quoteCustom ? toHex(settings.quoteColor, themeQuote) : themeQuote;
     const em = built.em
-        ? toHex(`rgb(${built.em[0]},${built.em[1]},${built.em[2]})`)
+        ? rgbHex(built.em)
         : toHex(themeColor('italics_text_color', EM_GRAY), EM_GRAY);
     return { quote, em };
 }
@@ -261,6 +412,7 @@ function syncUi() {
     const built = settings.enabled ? applyTheme() : (clearTheme(), buildCss(settings));
     const preview = previewColors(built, settings);
     $('#pb_enabled').prop('checked', !!settings.enabled);
+    $('#pb_theme').prop('checked', !!settings.theme);
     $('#pb_custom_color').val(toHex(settings.customColor, '#F0E8DD'));
     $('#pb_text_custom').prop('checked', settings.textMode === 'custom');
     $('#pb_text_color').val(toHex(settings.textColor, BODY_INK)).prop('disabled', settings.textMode !== 'custom');
@@ -270,10 +422,23 @@ function syncUi() {
     $('#pb_wash_val').text(`${settings.wash}%`);
     $('#pb_wash_row').prop('hidden', !settings.image);
     $('#pb_clear').prop('disabled', !settings.image);
+    $('#pb_font_family').val(settings.fontFamily || 'tavern');
+    $('#pb_font_custom').val(settings.fontCustom || '');
+    $('#pb_font_custom_row').prop('hidden', settings.fontFamily !== 'custom');
+    $('#pb_font_size').val(settings.fontSize);
+    $('#pb_font_size_val').text(`${settings.fontSize}%`);
+    $('#pb_font_weight').val(String(settings.fontWeight || 0));
+    const accentHex = accentOf(settings);
+    $('#pb_accent_color').val(accentHex);
     const chip = document.getElementById('pb_custom_chip');
     if (chip) chip.style.background = toHex(settings.customColor, '#F0E8DD');
+    const accentChip = document.getElementById('pb_accent_chip');
+    if (accentChip) accentChip.style.background = toHex(settings.accentCustom, '#905448');
     $('#pb_swatches .pb-swatch').each(function () {
         $(this).toggleClass('selected', $(this).data('preset') === settings.preset);
+    });
+    $('#pb_accents .pb-swatch').each(function () {
+        $(this).toggleClass('selected', $(this).data('accent') === settings.accent);
     });
     const previewEl = document.getElementById('pb_preview');
     if (previewEl) {
@@ -282,9 +447,14 @@ function syncUi() {
     }
     const sample = document.getElementById('pb_sample');
     if (sample) {
+        const stack = fontStack(settings);
+        sample.style.fontFamily = stack || '';
+        sample.style.fontWeight = settings.fontWeight ? String(settings.fontWeight) : '';
         sample.style.setProperty('--pb-preview-ink', built.bodyHex);
         sample.style.setProperty('--pb-preview-em', preview.em);
         sample.style.setProperty('--pb-preview-quote', preview.quote);
+        const quoted = sample.querySelector('q');
+        if (quoted) quoted.style.fontStyle = settings.theme ? 'italic' : '';
         if (settings.image) {
             const wash = Math.min(80, Math.max(0, Number(settings.wash) || 0)) / 100;
             const rgb = parseColor(built.paper);
@@ -297,6 +467,10 @@ function syncUi() {
             sample.style.backgroundColor = built.paper;
         }
     }
+}
+
+function markFont(settings) {
+    settings.fontTouched = true;
 }
 
 function bindSettings() {
@@ -315,6 +489,17 @@ function bindSettings() {
         syncUi();
     });
 
+    $('#pb_theme').on('change', function () {
+        const settings = settingsOf();
+        settings.theme = this.checked;
+        if (this.checked) {
+            settings.enabled = true;
+            seedTheme(settings);
+        }
+        save();
+        syncUi();
+    });
+
     $('#pb_swatches').on('click', '.pb-swatch', function () {
         const settings = settingsOf();
         settings.preset = $(this).data('preset');
@@ -326,6 +511,23 @@ function bindSettings() {
         const settings = settingsOf();
         settings.preset = 'custom';
         settings.customColor = this.value;
+        save();
+        syncUi();
+    });
+
+    $('#pb_accents').on('click', '.pb-swatch', function () {
+        const settings = settingsOf();
+        const id = $(this).data('accent');
+        if (id === 'custom') settings.accentCustom = $('#pb_accent_color').val() || accentOf(settings);
+        settings.accent = id;
+        save();
+        syncUi();
+    });
+
+    $('#pb_accent_color').on('input', function () {
+        const settings = settingsOf();
+        settings.accent = 'custom';
+        settings.accentCustom = this.value;
         save();
         syncUi();
     });
@@ -362,6 +564,39 @@ function bindSettings() {
         syncUi();
     });
 
+    $('#pb_font_family').on('change', function () {
+        const settings = settingsOf();
+        settings.fontFamily = this.value;
+        markFont(settings);
+        save();
+        syncUi();
+    });
+
+    $('#pb_font_custom').on('input', function () {
+        const settings = settingsOf();
+        settings.fontFamily = 'custom';
+        settings.fontCustom = this.value;
+        markFont(settings);
+        save();
+        syncUi();
+    });
+
+    $('#pb_font_size').on('input', function () {
+        const settings = settingsOf();
+        settings.fontSize = Number(this.value);
+        markFont(settings);
+        save();
+        syncUi();
+    });
+
+    $('#pb_font_weight').on('change', function () {
+        const settings = settingsOf();
+        settings.fontWeight = Number(this.value);
+        markFont(settings);
+        save();
+        syncUi();
+    });
+
     $('#pb_wash').on('input', function () {
         settingsOf().wash = Number(this.value);
         save();
@@ -383,19 +618,30 @@ function bindSettings() {
     });
 }
 
+function swatchHtml(items, key) {
+    return items.map(item => `
+        <button type="button" class="pb-swatch" data-${key}="${item.id}">
+            <span class="pb-chip" style="background:${item.color}"></span>
+            <small>${item.name}</small>
+        </button>`).join('');
+}
+
 function mountSettings() {
+    const existing = document.getElementById('paper_bg_settings');
+    if (existing && !existing.querySelector('#pb_theme')) existing.remove();
     if (document.getElementById('paper_bg_settings')) {
         bindSettings();
         syncUi();
         return;
     }
-    const swatches = PRESETS.map(item => `
-        <button type="button" class="pb-swatch" data-preset="${item.id}">
-            <span class="pb-chip" style="background:${item.color}"></span>
-            <small>${item.name}</small>
-        </button>`).join('') + `
+    const swatches = swatchHtml(PRESETS, 'preset') + `
         <button type="button" class="pb-swatch" data-preset="custom">
             <span class="pb-chip" id="pb_custom_chip"></span>
+            <small>自定义</small>
+        </button>`;
+    const accents = swatchHtml(ACCENTS, 'accent') + `
+        <button type="button" class="pb-swatch" data-accent="custom">
+            <span class="pb-chip" id="pb_accent_chip"></span>
             <small>自定义</small>
         </button>`;
 
@@ -408,7 +654,9 @@ function mountSettings() {
     <div class="pb-body">
         <div class="pb-row">
             <label><input type="checkbox" id="pb_enabled"> 启用</label>
+            <label><input type="checkbox" id="pb_theme"> 启用整套主题</label>
         </div>
+        <p class="pb-hint">整套主题会换上强调色：选中的顶栏图标、铺满的按钮、滑条，还有那些左深右浅的标题条。关掉就回到酒馆原来的灰和黑。底色、主文字、引用色、字体都还能单独改，重新打开主题不会把字体改回去。</p>
         <div class="pb-label">纯色</div>
         <div class="pb-swatches" id="pb_swatches">${swatches}</div>
         <div class="pb-row">
@@ -416,18 +664,55 @@ function mountSettings() {
             <input type="color" id="pb_custom_color" value="#F0E8DD">
         </div>
         <div class="pb-preview" id="pb_preview"></div>
+        <div class="pb-label">强调色</div>
+        <div class="pb-swatches" id="pb_accents">${accents}</div>
+        <div class="pb-row">
+            <span>自定义强调色</span>
+            <input type="color" id="pb_accent_color" value="#905448">
+        </div>
+        <p class="pb-hint">只在整套主题打开时生效。很浅的颜色做按钮时，按钮上的字会改成黑的，避免白字看不清。没选中的图标是暖灰，选中的图标本身变成这个颜色，不再垫黑底。</p>
         <div class="pb-label">主文字</div>
         <div class="pb-row">
             <label><input type="checkbox" id="pb_text_custom"> 自己指定</label>
             <input type="color" id="pb_text_color" value="${BODY_INK}">
         </div>
-        <p class="pb-hint">不勾选时，浅底自动用黑色，深底自动用浅色。金黄对白不跟着变。</p>
+        <p class="pb-hint">不勾选时，浅底自动用黑色，深底自动用浅色。引用色不跟着变。开着整套主题也能改。</p>
         <div class="pb-label">引用色</div>
         <div class="pb-row">
             <label><input type="checkbox" id="pb_quote_custom"> 自己指定</label>
             <input type="color" id="pb_quote_color" value="#E18A24">
         </div>
-        <p class="pb-hint">默认保持酒馆现在的引用色。金黄对白在浅底上会比黑底上淡，如果发飘，再勾自己指定，选一个更深的琥珀色。斜体只有太浅时才压成灰色，和正文黑色分开。引号里的斜体仍是引用色。</p>
+        <p class="pb-hint">默认保持酒馆现在的引用色。整套主题打开时，对白会加斜体；关掉主题，斜体去掉，颜色回到原来的。中文在很多手机上没有斜体字形，可能只是略微倾斜。斜体太浅时仍压成灰色，和正文黑色分开。</p>
+        <div class="pb-label">正文字体</div>
+        <div class="pb-row">
+            <span>字体</span>
+            <select id="pb_font_family">
+                <option value="tavern">酒馆默认</option>
+                <option value="sans">系统黑体</option>
+                <option value="serif">系统宋体</option>
+                <option value="custom">自定义名称</option>
+            </select>
+        </div>
+        <div class="pb-row" id="pb_font_custom_row" hidden>
+            <span>字体名</span>
+            <input type="text" id="pb_font_custom" class="pb-font-name" placeholder="手机里已有的字体名" autocomplete="off">
+        </div>
+        <div class="pb-row">
+            <span>字号</span>
+            <input type="range" id="pb_font_size" min="85" max="130" step="1" value="100">
+            <span id="pb_font_size_val">100%</span>
+        </div>
+        <div class="pb-row">
+            <span>粗细</span>
+            <select id="pb_font_weight">
+                <option value="0">跟随酒馆</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+                <option value="500">500</option>
+                <option value="600">600</option>
+            </select>
+        </div>
+        <p class="pb-hint">只改聊天正文，不动设置页。和酒馆自己的「字体比例」会叠在一起。安卓上很多中文字体没有 300，和 400 可能看不出差别。自定义名称必须是这台设备已经安装的字体，不能上传字体文件。这些设置单独保存，重新打开整套主题不会覆盖。</p>
         <div class="pb-label">图片背景</div>
         <div class="pb-row">
             <button type="button" class="pb-btn" id="pb_upload">上传并裁剪</button>
@@ -439,7 +724,7 @@ function mountSettings() {
             <input type="range" id="pb_wash" min="0" max="80" step="1" value="45">
             <span id="pb_wash_val">45%</span>
         </div>
-        <p class="pb-hint">图片铺在聊天区后面。顶栏、输入栏和扩展抽屉保持纯色，图标才不会看丢。淡化越高，字越好读。</p>
+        <p class="pb-hint">图片铺在聊天区后面。顶栏、输入栏和扩展抽屉保持纯色。淡化越高，字越好读。</p>
         <p class="pb-warn" id="pb_warn" hidden></p>
         <p class="pb-sample" id="pb_sample">窗外的雨停了。<em>她把玩偶抱紧了一点。</em><q>哥哥，欢迎回家。</q></p>
     </div>
@@ -450,11 +735,6 @@ function mountSettings() {
         || document.querySelector('#rm_extensions_block');
     if (!host) return;
     host.insertAdjacentHTML('beforeend', html);
-    const chip = document.getElementById('pb_custom_chip');
-    const custom = document.getElementById('pb_custom_color');
-    const paintChip = () => { if (chip && custom) chip.style.background = custom.value; };
-    custom.addEventListener('input', paintChip);
-    paintChip();
     bindSettings();
     syncUi();
 }
@@ -572,10 +852,10 @@ function openCropper(file) {
     };
     document.getElementById('pb_crop_ok').onclick = () => {
         const scale = state.s0 * state.z;
-        const sx = Math.max(0, -state.left / scale);
-        const sy = Math.max(0, -state.top / scale);
-        const sw = Math.min(state.iw - sx, state.fw / scale);
-        const sh = Math.min(state.ih - sy, state.fh / scale);
+        const sx = Math.max(0, Math.min(state.iw - 1, -state.left / scale));
+        const sy = Math.max(0, Math.min(state.ih - 1, -state.top / scale));
+        const sw = Math.max(1, Math.min(state.iw - sx, state.fw / scale));
+        const sh = Math.max(1, Math.min(state.ih - sy, state.fh / scale));
         const aspect = sw / sh;
         let edge = 1600;
         let quality = 0.82;
@@ -654,6 +934,7 @@ function boot() {
             settings._quoteSeeded = true;
             save();
         }
+        if (settings.theme && seedTheme(settings)) save();
         mountCropper();
         mountSettings();
         if (!globalThis.__paperBgListener) {
