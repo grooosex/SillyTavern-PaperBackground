@@ -1,0 +1,16 @@
+{
+    "display_name": "纸色背景",
+    "loading_order": 150,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "grooosex",
+    "version": "1.0.0",
+    "homePage": "https://github.com/grooosex/SillyTavern-PaperBackground",
+    "auto_update": false,
+    "hooks": {
+        "enable": "onEnable",
+        "disable": "onDisable"
+    }
+}

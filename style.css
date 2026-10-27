@@ -1,0 +1,241 @@
+/* Settings + crop UI only. Theme overrides are injected at runtime so the toggle can fully undo them. */
+
+#paper_bg_settings {
+    margin: 0 0 8px;
+}
+
+#paper_bg_settings .pb-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 10px;
+    background: rgba(127, 127, 127, 0.12);
+}
+
+#paper_bg_settings .pb-head b {
+    font-size: 1.02em;
+}
+
+#paper_bg_settings .pb-chevron {
+    transition: transform 0.15s ease;
+}
+
+#paper_bg_settings .pb-head.open .pb-chevron {
+    transform: rotate(180deg);
+}
+
+#paper_bg_settings .pb-body {
+    display: none;
+    padding: 10px 4px 14px;
+}
+
+#paper_bg_settings .pb-body.open {
+    display: block;
+}
+
+#paper_bg_settings .pb-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+}
+
+#paper_bg_settings .pb-label {
+    font-size: 0.92em;
+    opacity: 0.8;
+    margin: 12px 0 4px;
+}
+
+#paper_bg_settings .pb-hint,
+#paper_bg_settings .pb-warn {
+    margin: 4px 0 8px;
+    font-size: 0.85em;
+    line-height: 1.45;
+    opacity: 0.75;
+}
+
+#paper_bg_settings .pb-warn {
+    color: #a15c12;
+    opacity: 1;
+}
+
+#paper_bg_settings .pb-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#paper_bg_settings .pb-swatch {
+    width: 58px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+}
+
+#paper_bg_settings .pb-chip {
+    display: block;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+#paper_bg_settings .pb-swatch small {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+#paper_bg_settings .pb-swatch.selected .pb-chip {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+#paper_bg_settings .pb-preview {
+    height: 64px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background-size: cover;
+    background-position: center;
+    margin: 6px 0 8px;
+}
+
+#paper_bg_settings .pb-sample {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    line-height: 1.55;
+    background: var(--pb-preview-bg, transparent);
+    color: var(--pb-preview-ink, inherit);
+}
+
+#paper_bg_settings .pb-sample em {
+    font-style: italic;
+    color: var(--pb-preview-em, inherit);
+}
+
+#paper_bg_settings .pb-sample q {
+    color: var(--pb-preview-quote, inherit);
+    quotes: "“" "”";
+}
+
+#paper_bg_settings button.pb-btn,
+.pb-crop button.pb-btn {
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.35);
+    color: inherit;
+}
+
+#paper_bg_settings input[type="color"] {
+    width: 42px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.pb-crop {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    background: rgba(20, 16, 12, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #2a2624;
+}
+
+.pb-crop[hidden] {
+    display: none !important;
+}
+
+.pb-crop-card {
+    width: min(560px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    background: #f7f3ec;
+    color: #2a2624;
+    border-radius: 16px;
+    padding: 14px 14px 16px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.pb-crop-title {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.pb-crop-hint {
+    margin: 6px 0 10px;
+    font-size: 0.86em;
+    line-height: 1.45;
+    opacity: 0.75;
+}
+
+.pb-crop-frame {
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(45deg, #ddd4c8 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd4c8 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd4c8 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd4c8 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    background-color: #f3eee6;
+    border-radius: 12px;
+    touch-action: none;
+    cursor: grab;
+}
+
+.pb-crop-frame.dragging {
+    cursor: grabbing;
+}
+
+.pb-crop-frame img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    max-width: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+
+.pb-crop-zoom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 0.9em;
+}
+
+.pb-crop-zoom input {
+    flex: 1;
+}
+
+.pb-crop-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.pb-crop-actions .pb-btn-primary {
+    background: #2a2624;
+    color: #f7f3ec;
+    border-color: #2a2624;
+}
